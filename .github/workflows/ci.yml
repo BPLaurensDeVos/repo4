@@ -93,7 +93,7 @@ jobs:
                 </settings>" > ~/.m2/settings.xml
           cat ~/.m2/settings.xml
 
-      - name: Build and Test
+      - name: Build and Test 
         if: env.repo3_status_code == '200' || env.repo3_recheck_status_code == '200'
         run: mvn clean package
 
