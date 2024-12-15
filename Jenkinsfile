@@ -67,19 +67,16 @@ pipeline {
             }
         }
 
-        stage('Build, Test, and Sonar Scan') {
-            parallel {
-                stage('Build and Test') {
-                    steps {
-                        sh 'mvn clean package'
-                    }
-                }
-                stage('SonarCloud Scan') {
-                    steps {
-                        withSonarQubeEnv('SonarCloud') {
-                            sh 'mvn sonar:sonar'
-                        }
-                    }
+        stage('Build and Test') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        
+        stage('SonarCloud Scan') {
+            steps {
+                withSonarQubeEnv('SonarCloud') {
+                    sh 'mvn sonar:sonar'
                 }
             }
         }
