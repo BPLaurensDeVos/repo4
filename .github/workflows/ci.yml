@@ -42,7 +42,7 @@ jobs:
           https://api.github.com/repos/BPLaurensDeVos/repo3/dispatches \
           -d '{"event_type":"build-artifact"}'
 
-      - name: Wait for Repo2 Artifact to be Published
+      - name: Wait for Repo3 Artifact to be Published
         if: env.repo3_status_code != '200'
         run: |
           echo "Waiting for Repo2 artifact to be published..."
