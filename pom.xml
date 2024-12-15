@@ -5,7 +5,7 @@
   
   <groupId>com.example.repo4</groupId>
   <artifactId>repo4</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <packaging>jar</packaging>
   
   <name>repo4</name>
@@ -28,13 +28,13 @@
     <dependency>
       <groupId>com.example.repo3</groupId>
       <artifactId>repo3</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0</version>
     </dependency>
     <!-- Dependency on Repo1 -->
     <dependency>
       <groupId>com.example.repo1</groupId>
       <artifactId>repo1</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>1.0</version>
     </dependency>
   </dependencies>
   
@@ -52,4 +52,22 @@
       </plugin>
     </plugins>
   </build>
+
+  <distributionManagement>
+    <repository>
+      <id>github-repo4</id>
+      <url>https://maven.pkg.github.com/BPLaurensDeVos/repo4</url>
+    </repository>
+  </distributionManagement>
+  
+  <repositories>
+    <repository>
+      <id>github-repo1</id>
+      <url>https://maven.pkg.github.com/BPLaurensDeVos/repo1</url>
+    </repository>
+    <repository>
+      <id>github-repo3</id>
+      <url>https://maven.pkg.github.com/BPLaurensDeVos/repo3</url>
+    </repository>
+  </repositories>
 </project>

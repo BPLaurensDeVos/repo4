@@ -1,0 +1,94 @@
+name: CI/CD Pipeline for Repo4
+
+on:
+  push:
+    branches:
+      - main
+  repository_dispatch:
+    types:
+      - build-artifact
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
+      - name: Check Repo3 Artifact Availability
+        id: check-repo3-artifact
+        run: |
+          STATUS_CODE=$(curl -L -u ${{ github.actor }}:${{ secrets.PAT_TOKEN }} \
+                        -s \
+                        -o /dev/null \
+                        -w "%{http_code}" \
+                        https://maven.pkg.github.com/BPLaurensDeVos/repo3/com/example/repo3/repo3/1.0/repo3-1.0.jar)
+          echo "Artifact Status Code: $STATUS_CODE"
+          echo "repo3_status_code=$STATUS_CODE" >> $GITHUB_ENV
+
+      - name: Trigger Repo3 if Artifact is Missing 
+        if: env.repo3_status_code != '200'
+        run: |
+          echo "Repo3 artifact not found. Triggering Repo3..."
+          curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+          https://api.github.com/repos/BPLaurensDeVos/repo3/dispatches \
+          -d '{"event_type":"build-artifact"}'
+
+      - name: Wait for Repo2 Artifact to be Published
+        if: env.repo3_status_code != '200'
+        run: |
+          echo "Waiting for Repo2 artifact to be published..."
+          sleep 120
+
+      - name: Recheck Repo3 Artifact Availability
+        if: env.repo3_status_code != '200'
+        id: recheck-artifact
+        run: |
+          STATUS_CODE=$(curl -L -u ${{ github.actor }}:${{ secrets.PAT_TOKEN }} \
+                        -s \
+                        -o /dev/null \
+                        -w "%{http_code}" \
+                        https://maven.pkg.github.com/BPLaurensDeVos/repo3/com/example/repo3/repo3/1.0/repo3-1.0.jar)
+          echo "Rechecked Artifact Status Code: $STATUS_CODE"
+          echo "repo3_recheck_status_code=$STATUS_CODE" >> $GITHUB_ENV
+
+      - name: Fail Workflow if Artifact Still Missing
+        if: env.repo3_status_code != '200' && env.repo3_recheck_status_code != '200'
+        run: |
+          echo "Artifact still missing after waiting. Failing workflow..."
+          exit 1
+
+      - name: Configure Maven to Use GitHub Packages
+        if: env.repo3_status_code == '200' || env.repo3_recheck_status_code == '200'
+        run: |
+          mkdir -p ~/.m2
+          echo "<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
+                        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+                        xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd'>
+                  <servers>
+                    <server>
+                      <id>github</id>
+                      <username>${{ github.actor }}</username>
+                      <password>${{ secrets.PAT_TOKEN }}</password>
+                    </server>
+                  </servers>
+                </settings>" > ~/.m2/settings.xml
+          cat ~/.m2/settings.xml
+
+      - name: Build and Test
+        if: env.repo3_status_code == '200' || env.repo3_recheck_status_code == '200'
+        run: mvn clean package
+
+      - name: Publish to GitHub Packages
+        run: mvn deploy
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
